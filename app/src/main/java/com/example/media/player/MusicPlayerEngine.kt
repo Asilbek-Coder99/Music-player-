@@ -1,5 +1,6 @@
 package com.example.media.player
 
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -9,8 +10,9 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaSession
+import com.example.MainActivity
 import com.example.domain.model.Song
-import com.example.media.service.PlaybackService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -47,6 +49,8 @@ class MusicPlayerEngine(private val context: Context) {
         setAudioAttributes(audioAttributes, true)
     }
 
+    private var mediaSession: MediaSession? = null
+
     private val scope = CoroutineScope(Dispatchers.Main + Job())
     private var positionUpdateJob: Job? = null
 
@@ -56,6 +60,25 @@ class MusicPlayerEngine(private val context: Context) {
     var onSongChangedListener: ((Song) -> Unit)? = null
 
     init {
+        try {
+            val intent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
+            val pendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            mediaSession = MediaSession.Builder(context, exoPlayer)
+                .setId("GlassicMediaSession")
+                .setSessionActivity(pendingIntent)
+                .build()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
         exoPlayer.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _playerState.value = _playerState.value.copy(isPlaying = isPlaying)
@@ -90,18 +113,8 @@ class MusicPlayerEngine(private val context: Context) {
         })
     }
 
-    private fun startServiceIfNeeded() {
-        try {
-            val intent = Intent(context, PlaybackService::class.java)
-            context.startService(intent)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
     fun setQueueAndPlay(songs: List<Song>, startIndex: Int = 0) {
         if (songs.isEmpty()) return
-        startServiceIfNeeded()
 
         val mediaItems = songs.map { song ->
             val metadata = MediaMetadata.Builder()
@@ -137,7 +150,6 @@ class MusicPlayerEngine(private val context: Context) {
         if (exoPlayer.isPlaying) {
             exoPlayer.pause()
         } else {
-            startServiceIfNeeded()
             if (exoPlayer.playbackState == Player.STATE_ENDED) {
                 exoPlayer.seekTo(0, 0L)
             }
@@ -211,6 +223,12 @@ class MusicPlayerEngine(private val context: Context) {
 
     fun release() {
         stopPositionUpdates()
+        try {
+            mediaSession?.release()
+            mediaSession = null
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         exoPlayer.release()
     }
 }

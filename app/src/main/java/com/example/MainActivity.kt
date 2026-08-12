@@ -15,7 +15,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.media.service.PlaybackService
 import com.example.navigation.GlassNavHost
 import com.example.presentation.MainViewModel
 import com.example.ui.theme.GlassicPlayerTheme

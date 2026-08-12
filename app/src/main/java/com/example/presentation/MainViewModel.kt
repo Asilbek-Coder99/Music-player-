@@ -12,7 +12,6 @@ import com.example.domain.model.Playlist
 import com.example.domain.model.Song
 import com.example.domain.model.ThemeMode
 import com.example.media.player.MusicPlayerEngine
-import com.example.media.service.PlaybackService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -27,8 +26,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val scanner = MediaScanner(application)
     val repository = MusicRepository(scanner, database.musicDao())
 
-    val playerEngine: MusicPlayerEngine = PlaybackService.playerEngine
-        ?: MusicPlayerEngine(application).also { PlaybackService.playerEngine = it }
+    val playerEngine: MusicPlayerEngine = MusicPlayerEngine(application)
 
     val playerState = playerEngine.playerState
 
