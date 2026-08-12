@@ -114,22 +114,26 @@ class MusicRepository(
     }.flowOn(Dispatchers.IO)
 
     suspend fun scanAndSyncMedia() = withContext(Dispatchers.IO) {
-        val scannedSongs = mediaScanner.scanLocalMedia()
-        val songEntities = scannedSongs.map { song ->
-            SongEntity(
-                id = song.id,
-                title = song.title,
-                artist = song.artist,
-                album = song.album,
-                durationMs = song.durationMs,
-                contentUri = song.contentUri,
-                albumArtUri = song.albumArtUri,
-                isFavorite = song.isFavorite,
-                playCount = song.playCount,
-                lastPlayedMs = song.lastPlayedMs
-            )
+        try {
+            val scannedSongs = mediaScanner.scanLocalMedia()
+            val songEntities = scannedSongs.map { song ->
+                SongEntity(
+                    id = song.id,
+                    title = song.title,
+                    artist = song.artist,
+                    album = song.album,
+                    durationMs = song.durationMs,
+                    contentUri = song.contentUri,
+                    albumArtUri = song.albumArtUri,
+                    isFavorite = song.isFavorite,
+                    playCount = song.playCount,
+                    lastPlayedMs = song.lastPlayedMs
+                )
+            }
+            musicDao.insertSongs(songEntities)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        musicDao.insertSongs(songEntities)
     }
 
     suspend fun toggleFavorite(song: Song) = withContext(Dispatchers.IO) {

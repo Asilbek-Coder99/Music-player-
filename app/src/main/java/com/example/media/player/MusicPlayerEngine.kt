@@ -1,6 +1,7 @@
 package com.example.media.player
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -9,6 +10,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.domain.model.Song
+import com.example.media.service.PlaybackService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -88,8 +90,18 @@ class MusicPlayerEngine(private val context: Context) {
         })
     }
 
+    private fun startServiceIfNeeded() {
+        try {
+            val intent = Intent(context, PlaybackService::class.java)
+            context.startService(intent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     fun setQueueAndPlay(songs: List<Song>, startIndex: Int = 0) {
         if (songs.isEmpty()) return
+        startServiceIfNeeded()
 
         val mediaItems = songs.map { song ->
             val metadata = MediaMetadata.Builder()
@@ -125,6 +137,7 @@ class MusicPlayerEngine(private val context: Context) {
         if (exoPlayer.isPlaying) {
             exoPlayer.pause()
         } else {
+            startServiceIfNeeded()
             if (exoPlayer.playbackState == Player.STATE_ENDED) {
                 exoPlayer.seekTo(0, 0L)
             }

@@ -28,8 +28,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        startPlaybackService()
-
         setContent {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
 
@@ -70,15 +68,6 @@ class MainActivity : ComponentActivity() {
             GlassicPlayerTheme(themeMode = themeMode) {
                 GlassNavHost(viewModel = viewModel)
             }
-        }
-    }
-
-    private fun startPlaybackService() {
-        val serviceIntent = Intent(this, PlaybackService::class.java)
-        try {
-            startService(serviceIntent)
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 }
