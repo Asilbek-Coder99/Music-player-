@@ -1,6 +1,7 @@
 package com.example
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -14,6 +15,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.media.service.PlaybackService
 import com.example.navigation.GlassNavHost
 import com.example.presentation.MainViewModel
 import com.example.ui.theme.GlassicPlayerTheme
@@ -26,31 +28,40 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        startPlaybackService()
+
         setContent {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
 
-            val permissionToRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                Manifest.permission.READ_MEDIA_AUDIO
-            } else {
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            }
+            val permissionsToRequest = mutableListOf<String>().apply {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    add(Manifest.permission.READ_MEDIA_AUDIO)
+                    add(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    add(Manifest.permission.READ_EXTERNAL_STORAGE)
+                }
+            }.toTypedArray()
 
-            val permissionLauncher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.RequestPermission()
-            ) { isGranted ->
-                if (isGranted) {
+            val permissionsLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestMultiplePermissions()
+            ) { permissions ->
+                val audioGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    permissions[Manifest.permission.READ_MEDIA_AUDIO] == true
+                } else {
+                    permissions[Manifest.permission.READ_EXTERNAL_STORAGE] == true
+                }
+                if (audioGranted) {
                     viewModel.rescanLibrary()
                 }
             }
 
             LaunchedEffect(Unit) {
-                val hasPermission = ContextCompat.checkSelfPermission(
-                    this@MainActivity,
-                    permissionToRequest
-                ) == PackageManager.PERMISSION_GRANTED
+                val missingPermissions = permissionsToRequest.filter {
+                    ContextCompat.checkSelfPermission(this@MainActivity, it) != PackageManager.PERMISSION_GRANTED
+                }
 
-                if (!hasPermission) {
-                    permissionLauncher.launch(permissionToRequest)
+                if (missingPermissions.isNotEmpty()) {
+                    permissionsLauncher.launch(permissionsToRequest)
                 } else {
                     viewModel.rescanLibrary()
                 }
@@ -59,6 +70,19 @@ class MainActivity : ComponentActivity() {
             GlassicPlayerTheme(themeMode = themeMode) {
                 GlassNavHost(viewModel = viewModel)
             }
+        }
+    }
+
+    private fun startPlaybackService() {
+        val serviceIntent = Intent(this, PlaybackService::class.java)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent)
+            } else {
+                startService(serviceIntent)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }
