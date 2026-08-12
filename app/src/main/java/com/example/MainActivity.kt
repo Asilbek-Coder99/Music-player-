@@ -76,11 +76,7 @@ class MainActivity : ComponentActivity() {
     private fun startPlaybackService() {
         val serviceIntent = Intent(this, PlaybackService::class.java)
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent)
-            } else {
-                startService(serviceIntent)
-            }
+            startService(serviceIntent)
         } catch (e: Exception) {
             e.printStackTrace()
         }
