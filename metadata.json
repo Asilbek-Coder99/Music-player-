@@ -1,0 +1,6 @@
+{
+  "name": "Glassic Player",
+  "description": "Liquid Glass Android Music Player with translucent glassmorphism UI, dynamic album art backgrounds, local audio library scanner, ExoPlayer Media3 engine, playlists, and GitHub Actions CI/CD.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
